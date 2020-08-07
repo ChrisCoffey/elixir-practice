@@ -1,2 +1,3 @@
 **/*.formatter.exs
 **/*README.md
+**/.exercism/metadata.json

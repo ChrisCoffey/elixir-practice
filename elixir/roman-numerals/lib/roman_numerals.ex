@@ -1,11 +1,5 @@
 defmodule RomanNumerals do
-
-  @doc """
-  Convert the number to a roman number.
-  """
-  @spec numeral(pos_integer) :: String.t()
-  def numeral(number) do
-    conversionTable = %{
+  @conversionTable %{
       1000 => "M",
       900 => "CM",
       500 => "D",
@@ -21,13 +15,17 @@ defmodule RomanNumerals do
       1 => "I"
       }
 
-    # Start from the left and work down to the right
-    res = List.foldl(Enum.reverse(Map.keys(conversionTable)), {"", number}, fn elem, {acc, n} ->
+  @doc """
+  Convert the number to a roman number.
+  """
+  @spec numeral(pos_integer) :: String.t()
+  def numeral(number) do
+    res = List.foldl(Enum.reverse(Map.keys(@conversionTable)), {"", number}, fn elem, {acc, n} ->
       counts = div(n, elem)
       leftover = rem(n, elem)
 
       if counts > 0 do
-        newChars = Enum.reduce(List.duplicate(conversionTable[elem], counts), fn l, r -> l <> r end)
+        newChars = Enum.reduce(List.duplicate(@conversionTable[elem], counts), fn l, r -> l <> r end)
 
         {acc<>newChars, leftover}
       else

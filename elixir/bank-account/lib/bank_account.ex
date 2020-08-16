@@ -23,7 +23,6 @@ defmodule BankAccount do
   @spec close_bank(account) :: none
   def close_bank(account) do
     Agent.stop(account)
-    #account |> if_open(fn -> Process.exit(account, :normal) end)
   end
 
   @doc """

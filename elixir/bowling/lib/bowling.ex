@@ -21,16 +21,19 @@ defmodule Bowling do
   @spec roll(any, integer) :: any | String.t()
   def roll(_, roll) when roll < 0 do err_not_enough_pins() end
   def roll(_, roll) when roll > 10 do err_too_many_pins() end
+  def roll({:error, msg}, _) do {:error, msg} end
   def roll(game, roll) do
     frame = game.current_frame
     cond do
       frame.num == 10 ->
         case frame.rolls do
           []  -> %{game | current_frame: %{frame | rolls: [roll]}}
+          [10] -> %{game | current_frame: %{frame | rolls: [10, roll]}}
           [first] when first + roll > 10 -> err_too_many_pins()
-          [first] -> %{game | current_frame: %{frame | rolls: [roll | first]}}
-          [10, 10] -> %{game | current_frame: %{frame | rolls: [roll, 10, 10]}}
-          [first, second] when first + second > 10 -> %{game | current_frame: %{frame | rolls: [roll, second, first]}}
+          [first] -> %{game | current_frame: %{frame | rolls: [first, roll]}}
+          [10, 10] -> %{game | current_frame: %{frame | rolls: [10, 10,roll]}}
+          [10, second] when second + roll > 10 -> err_too_many_pins()
+          [first, second] when first + second >= 10 -> %{game | current_frame: %{frame | rolls: [first, second, roll]}}
           _  -> err_roll_game_over()
         end
       true ->
@@ -40,7 +43,8 @@ defmodule Bowling do
           [10] ->
             f_next = next_frame(frame)
             %{current_frame: %{f_next | rolls: [roll]}, previous: [frame | game.previous]}
-          [first] -> %{current_frame: next_frame(frame), previous: [%{frame | rolls: [roll, first]} | game.previous]}
+          [first] when first + roll > 10 -> err_too_many_pins()
+          [first] -> %{current_frame: next_frame(frame), previous: [%{frame | rolls: [first, roll]} | game.previous]}
         end
     end
   end
@@ -57,14 +61,14 @@ defmodule Bowling do
       true ->
         # Given an in-order list of frames,
         [game.current_frame | game.previous] |>
-        List.reverse |>
+        Enum.reverse |>
         score_frames
     end
   end
 
   defp score_frames([]) do 0 end
   defp score_frames([f | rest]) do
-    score_frame([f | rest]) + score_frames rest
+    score_frame([f | rest]) + score_frames(rest)
   end
 
   defp score_frame([frame, n,  m | _]) do
@@ -75,11 +79,17 @@ defmodule Bowling do
           [[10], [a | _]] -> 20 + a
         end
       [a, b] when a + b == 10 -> # Spare
-        a + b + n.rolls.last
+        a + b + List.first(n.rolls)
       xs -> Enum.sum xs # Open frame
     end
   end
   defp score_frame([frame, n]) do
+    [last_1, last_2 | _] = n.rolls
+    case frame.rolls do
+      [10] -> 10 + last_1 + last_2
+      [a,b] when a + b == 10 -> a + b + last_1
+      [a,b] -> a + b
+    end
   end
   # this must be the final frame
   defp score_frame([frame]) do
@@ -99,7 +109,7 @@ defmodule Bowling do
   end
 
   defp err_too_many_pins do
-    {:error, "Pin cound exceeds pins on the lane"}
+    {:error, "Pin count exceeds pins on the lane"}
   end
 
   defp err_not_enough_pins do

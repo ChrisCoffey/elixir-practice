@@ -69,23 +69,22 @@ defmodule Bowling do
 
   defp score_frame([frame, n,  m | _]) do
     case frame.rolls do
-      [10] ->
+      [10] -> # Strike
         case [n.rolls, m.rolls] do
           [[a, b], _] -> 10 + a + b
           [[10], [a | _]] -> 20 + a
         end
-      [a, b] when a + b == 10 ->
+      [a, b] when a + b == 10 -> # Spare
         a + b + n.rolls.last
-      xs -> Enum.sum xs
+      xs -> Enum.sum xs # Open frame
     end
   end
-  defp score_frame([frame, n | []]) do
+  defp score_frame([frame, n]) do
   end
   # this must be the final frame
-  defp score_frame(frame | []) do
+  defp score_frame([frame]) do
     frame.rolls |> Enum.sum
   end
-
 
   defp game_over(game) do
     case game.current_frame do
